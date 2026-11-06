@@ -2,8 +2,6 @@
 
 # Raw and processed datasets (not needed for inference)
 data/raw/
-data/processed/cleaned_customer_support.csv
-data/processed/eval_dataset.json
 
 # Development, tests, and notebooks
 notebooks/
