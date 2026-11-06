@@ -1,0 +1,36 @@
+# Vercel Ignore File - Keeps serverless function bundle under limits
+
+# Raw and processed datasets (not needed for inference)
+data/raw/
+data/processed/cleaned_customer_support.csv
+data/processed/eval_dataset.json
+
+# Development, tests, and notebooks
+notebooks/
+tests/
+scripts/
+.github/
+
+# Documentation reports (keep docs/policies for /api/policies)
+docs/architecture.md
+docs/eda_report.md
+docs/evaluation_results.md
+
+# Local environment & virtualenvs
+.venv/
+venv/
+ENV/
+.env
+.pytest_cache/
+__pycache__/
+*.py[cod]
+
+# Offline ML & tracking
+mlflow.db
+mlruns/
+
+# Docker and dev configs
+Dockerfile
+docker-compose.yml
+requirements-dev.txt
+run.py
