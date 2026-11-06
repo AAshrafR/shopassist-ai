@@ -48,7 +48,10 @@ class RAGPipeline:
             for doc in raw_chunks:
                 split_chunks.extend(chunker.split_document(doc))
             self.vector_store.add_documents(split_chunks)
-            self.vector_store.save(self.index_path)
+            try:
+                self.vector_store.save(self.index_path)
+            except OSError:
+                pass
             print(f"Built and saved new vector index with {len(split_chunks)} chunks.")
         else:
             print(f"Warning: {KB_CHUNKS_FILE} does not exist. Index is empty.")

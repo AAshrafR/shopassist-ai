@@ -1,6 +1,26 @@
 // ShopAssist AI Frontend Application Logic
 
-const API_BASE = window.location.origin;
+// Dynamic API Base resolution:
+// Supports fullstack Vercel deployment, local server, and cross-origin hosting
+function getApiBase() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramBase = urlParams.get("api_base") || urlParams.get("backend");
+  if (paramBase) {
+    const clean = paramBase.replace(/\/$/, "");
+    try { localStorage.setItem("SHOPASSIST_API_BASE", clean); } catch (e) {}
+    return clean;
+  }
+  if (window.SHOPASSIST_API_BASE) {
+    return window.SHOPASSIST_API_BASE.replace(/\/$/, "");
+  }
+  try {
+    const stored = localStorage.getItem("SHOPASSIST_API_BASE");
+    if (stored) return stored.replace(/\/$/, "");
+  } catch (e) {}
+  return window.location.origin;
+}
+
+const API_BASE = getApiBase();
 const messagesContainer = document.getElementById("messagesContainer");
 const chatForm = document.getElementById("chatForm");
 const queryInput = document.getElementById("queryInput");

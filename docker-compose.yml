@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  shopassist-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shopassist-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - LLM_PROVIDER=grounded_extractive
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

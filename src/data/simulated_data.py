@@ -4,12 +4,20 @@ Manages mock customer orders and support tickets in JSON storage.
 """
 
 from __future__ import annotations
+import os
 import json
 from pathlib import Path
 from typing import Dict, List, Optional
 from datetime import datetime, timezone
 
-DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "simulated"
+BUNDLED_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "simulated"
+IS_SERVERLESS = bool(os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
+
+if IS_SERVERLESS:
+    DATA_DIR = Path("/tmp") / "shopassist_simulated"
+else:
+    DATA_DIR = BUNDLED_DATA_DIR
+
 ORDERS_FILE = DATA_DIR / "orders.json"
 TICKETS_FILE = DATA_DIR / "tickets.json"
 
@@ -133,20 +141,63 @@ DEFAULT_TICKETS: List[Dict] = [
 ]
 
 
+# In-memory runtime cache for serverless environments
+_RUNTIME_ORDERS: Optional[List[Dict]] = None
+_RUNTIME_TICKETS: Optional[List[Dict]] = None
+
+
 def ensure_data_files():
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    global _RUNTIME_ORDERS, _RUNTIME_TICKETS
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
+
     if not ORDERS_FILE.exists():
-        with open(ORDERS_FILE, "w", encoding="utf-8") as f:
-            json.dump(DEFAULT_ORDERS, f, indent=2)
+        bundled_orders = BUNDLED_DATA_DIR / "orders.json"
+        data_to_write = DEFAULT_ORDERS
+        if bundled_orders.exists():
+            try:
+                with open(bundled_orders, "r", encoding="utf-8") as f:
+                    data_to_write = json.load(f)
+            except Exception:
+                data_to_write = DEFAULT_ORDERS
+        try:
+            with open(ORDERS_FILE, "w", encoding="utf-8") as f:
+                json.dump(data_to_write, f, indent=2)
+        except OSError:
+            if _RUNTIME_ORDERS is None:
+                _RUNTIME_ORDERS = list(data_to_write)
+
     if not TICKETS_FILE.exists():
-        with open(TICKETS_FILE, "w", encoding="utf-8") as f:
-            json.dump(DEFAULT_TICKETS, f, indent=2)
+        bundled_tickets = BUNDLED_DATA_DIR / "tickets.json"
+        data_to_write = DEFAULT_TICKETS
+        if bundled_tickets.exists():
+            try:
+                with open(bundled_tickets, "r", encoding="utf-8") as f:
+                    data_to_write = json.load(f)
+            except Exception:
+                data_to_write = DEFAULT_TICKETS
+        try:
+            with open(TICKETS_FILE, "w", encoding="utf-8") as f:
+                json.dump(data_to_write, f, indent=2)
+        except OSError:
+            if _RUNTIME_TICKETS is None:
+                _RUNTIME_TICKETS = list(data_to_write)
 
 
 def get_all_orders() -> List[Dict]:
+    global _RUNTIME_ORDERS
     ensure_data_files()
-    with open(ORDERS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    if ORDERS_FILE.exists():
+        try:
+            with open(ORDERS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    if _RUNTIME_ORDERS is not None:
+        return _RUNTIME_ORDERS
+    return list(DEFAULT_ORDERS)
 
 
 def find_order(order_id: str) -> Optional[Dict]:
@@ -159,9 +210,17 @@ def find_order(order_id: str) -> Optional[Dict]:
 
 
 def get_all_tickets() -> List[Dict]:
+    global _RUNTIME_TICKETS
     ensure_data_files()
-    with open(TICKETS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    if TICKETS_FILE.exists():
+        try:
+            with open(TICKETS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    if _RUNTIME_TICKETS is not None:
+        return _RUNTIME_TICKETS
+    return list(DEFAULT_TICKETS)
 
 
 def add_ticket(
@@ -173,6 +232,7 @@ def add_ticket(
     priority: str = "Medium",
     order_id: Optional[str] = None
 ) -> Dict:
+    global _RUNTIME_TICKETS
     ensure_data_files()
     tickets = get_all_tickets()
     new_num = 1001 + len(tickets)
@@ -192,8 +252,12 @@ def add_ticket(
         "updated_at": now_iso
     }
     tickets.append(new_ticket)
-    with open(TICKETS_FILE, "w", encoding="utf-8") as f:
-        json.dump(tickets, f, indent=2)
+    _RUNTIME_TICKETS = tickets
+    try:
+        with open(TICKETS_FILE, "w", encoding="utf-8") as f:
+            json.dump(tickets, f, indent=2)
+    except OSError:
+        pass
     return new_ticket
 
 

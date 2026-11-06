@@ -289,6 +289,42 @@ Navigate to [http://localhost:5000](http://localhost:5000) to inspect benchmark 
 
 ---
 
+## ⚡ Vercel Deployment
+
+ShopAssist AI is fully pre-configured for seamless deployment to **Vercel**:
+
+### Option 1: Full-Stack Deployment (Serverless FastAPI + Frontend)
+Deploy the frontend and serverless Python backend together directly from the root repository:
+
+1. Push your repository to GitHub.
+2. Go to [vercel.com](https://vercel.com) and click **"Add New Project"** > **"Import Git Repository"**.
+3. Keep default settings (Root Directory: `./`).
+4. Click **Deploy**.
+
+Vercel automatically:
+- Builds [`api/index.py`](api/index.py) using `@vercel/python` and lightweight runtime dependencies from [`api/requirements.txt`](api/requirements.txt).
+- Configures serverless rewrites via [`vercel.json`](vercel.json) to route `/api/*` and `/docs` to the FastAPI backend.
+- Serves the static interface from [`frontend/`](frontend/) with zero latency.
+
+Or deploy via the Vercel CLI:
+```bash
+npm install -g vercel
+vercel
+```
+
+### Option 2: Standalone Frontend Deployment
+If you prefer running the backend in a container (Docker / Render / Railway / Fly.io):
+
+1. Set the **Root Directory** in your Vercel project settings to `frontend`.
+2. Deploy the static frontend.
+3. Connect the frontend to your backend URL by opening:
+   ```
+   https://your-shopassist-ai.vercel.app?api_base=https://your-backend-api.com
+   ```
+   *The application will automatically save your backend URL to `localStorage` and persist connectivity.*
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
