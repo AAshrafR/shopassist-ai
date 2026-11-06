@@ -52,10 +52,30 @@ app.include_router(orders.router)
 app.include_router(tickets.router)
 app.include_router(health.router)
 
-# Mount static frontend assets
+# Serve frontend routes explicitly (reliable across ASGI serverless on Vercel)
 if FRONTEND_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
-    app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+
+    @app.get("/", include_in_schema=False)
+    async def serve_index():
+        index_file = FRONTEND_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file)
+        return {"message": "ShopAssist AI API is running. Access API docs at /docs"}
+
+    @app.get("/style.css", include_in_schema=False)
+    async def serve_css():
+        css_file = FRONTEND_DIR / "style.css"
+        if css_file.exists():
+            return FileResponse(css_file, media_type="text/css")
+        return {"error": "style.css not found"}
+
+    @app.get("/app.js", include_in_schema=False)
+    async def serve_js():
+        js_file = FRONTEND_DIR / "app.js"
+        if js_file.exists():
+            return FileResponse(js_file, media_type="application/javascript")
+        return {"error": "app.js not found"}
 
 
 if __name__ == "__main__":

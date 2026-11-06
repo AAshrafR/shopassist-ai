@@ -29,9 +29,11 @@ class VercelPathNormalizer:
             # If Vercel rewrote path to /api/index.py or similar, use the matched incoming path
             if matched_path and matched_path.startswith("/api"):
                 scope["path"] = matched_path
-            elif not scope.get("path", "").startswith("/api") and not scope.get("path", "").startswith("/docs") and not scope.get("path", "").startswith("/openapi"):
-                # Handle cases where /api was stripped (e.g. /chat -> /api/chat)
-                scope["path"] = f"/api{scope['path']}"
+            else:
+                raw_path = scope.get("path", "")
+                api_endpoints = ("/chat", "/orders", "/tickets", "/health", "/policies")
+                if any(raw_path == ep or raw_path.startswith(ep + "/") for ep in api_endpoints):
+                    scope["path"] = f"/api{raw_path}"
 
         await self.app(scope, receive, send)
 
