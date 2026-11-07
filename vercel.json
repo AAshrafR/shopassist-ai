@@ -2,8 +2,20 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/api/index.py"
+      "source": "/api/:match*",
+      "destination": "/api/index.py?__route__=/api/:match*"
+    },
+    {
+      "source": "/docs",
+      "destination": "/api/index.py?__route__=/docs"
+    },
+    {
+      "source": "/redoc",
+      "destination": "/api/index.py?__route__=/redoc"
+    },
+    {
+      "source": "/openapi.json",
+      "destination": "/api/index.py?__route__=/openapi.json"
     }
   ]
 }

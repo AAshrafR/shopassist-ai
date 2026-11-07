@@ -3,6 +3,7 @@ Vercel Serverless Function entrypoint for ShopAssist AI FastAPI backend.
 """
 
 import sys
+import urllib.parse
 from pathlib import Path
 
 # Ensure project root is on sys.path
@@ -15,28 +16,41 @@ from backend.main import app as fastapi_app
 
 class VercelPathNormalizer:
     """
-    ASGI middleware ensuring that Vercel internal rewrites (like /api/index.py)
-    or stripped prefixes route correctly to FastAPI routers using x-matched-path or raw path.
+    ASGI middleware ensuring that Vercel rewrites with __route__ parameter,
+    x-matched-path headers, or direct paths route correctly to FastAPI routers.
     """
     def __init__(self, app):
         self.app = app
 
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http":
-            headers = dict(scope.get("headers", []))
-            matched_path = headers.get(b"x-matched-path", b"").decode("utf-8")
+            target_path = None
 
-            # 1. Prefer original requested path from Vercel's x-matched-path header
-            if matched_path:
-                target_path = matched_path
-            else:
-                target_path = scope.get("path", "/")
+            # 1. Check if __route__ parameter was passed via Vercel rewrite
+            qs = scope.get("query_string", b"").decode("utf-8")
+            if qs:
+                params = urllib.parse.parse_qs(qs)
+                if "__route__" in params and params["__route__"]:
+                    target_path = params["__route__"][0]
+                    filtered_params = {k: v for k, v in params.items() if k != "__route__"}
+                    scope["query_string"] = urllib.parse.urlencode(filtered_params, doseq=True).encode("utf-8")
 
-            # 2. If path is internal Vercel script path (/api/index.py or /index.py), default to root /
-            if target_path in ("/api/index.py", "/index.py", "/api/index"):
-                target_path = "/"
+            # 2. Check x-matched-path header
+            if not target_path:
+                headers = dict(scope.get("headers", []))
+                matched = headers.get(b"x-matched-path", b"").decode("utf-8")
+                if matched and matched != "/api/index.py" and matched != "/api/index":
+                    target_path = matched
 
-            # 3. If an API endpoint was requested without /api prefix, normalize it
+            # 3. Fallback to raw scope path
+            if not target_path:
+                raw = scope.get("path", "/")
+                if raw in ("/api/index.py", "/index.py", "/api/index"):
+                    target_path = "/"
+                else:
+                    target_path = raw
+
+            # 4. If an API endpoint was requested without /api prefix, normalize it
             api_endpoints = ("/chat", "/orders", "/tickets", "/health", "/policies")
             if any(target_path == ep or target_path.startswith(ep + "/") for ep in api_endpoints):
                 target_path = f"/api{target_path}"
