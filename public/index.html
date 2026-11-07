@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShopAssist AI - Intelligent Customer Support</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon">🛍️</div>
+          <div>
+            <h1>ShopAssist AI</h1>
+            <span class="badge online">RAG Online</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Quick Inquiries</h3>
+        <div class="quick-prompts">
+          <button class="chip" data-prompt="Where is my order ORD-1001?">📦 Track Order ORD-1001</button>
+          <button class="chip" data-prompt="What is your return policy and window?">🔄 Return & Refund Policy</button>
+          <button class="chip" data-prompt="What payment methods and BNPL options are accepted?">💳 Accepted Payment Methods</button>
+          <button class="chip" data-prompt="I received a defective item, please create a support ticket.">🎫 File Defective Item Ticket</button>
+          <button class="chip" data-prompt="How do I change my shipping address?">📍 Update Delivery Address</button>
+        </div>
+      </div>
+
+      <div class="sidebar-section simulated-data-panel">
+        <h3>Simulated Orders</h3>
+        <div class="order-list" id="orderList">
+          <div class="order-item" onclick="lookupOrderQuick('ORD-1001')">
+            <strong>ORD-1001</strong> · Sarah Connor
+            <span class="status-tag shipped">Shipped</span>
+          </div>
+          <div class="order-item" onclick="lookupOrderQuick('ORD-1002')">
+            <strong>ORD-1002</strong> · Alex Murphy
+            <span class="status-tag delivered">Delivered</span>
+          </div>
+          <div class="order-item" onclick="lookupOrderQuick('ORD-1003')">
+            <strong>ORD-1003</strong> · Elena Rostova
+            <span class="status-tag processing">Processing</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="backend-status" id="backendStatus">
+          <span class="dot"></span> Backend: Connecting...
+        </div>
+        <div class="version-tag">RAG v1.0.0 · Bitext Knowledge Base</div>
+      </div>
+    </aside>
+
+    <!-- Main Chat Workspace -->
+    <main class="chat-container">
+      <header class="chat-header">
+        <div class="header-info">
+          <h2>Customer Support Concierge</h2>
+          <p>Instant context-grounded support with integrated business operations</p>
+        </div>
+        <div class="header-actions">
+          <button id="clearChatBtn" class="btn secondary">Clear History</button>
+          <a href="/docs" target="_blank" class="btn secondary">FastAPI Docs</a>
+        </div>
+      </header>
+
+      <!-- Message History -->
+      <section class="messages" id="messagesContainer">
+        <div class="message bot">
+          <div class="avatar">🤖</div>
+          <div class="bubble">
+            <p>Hello! Welcome to <strong>ShopAssist AI</strong>. I can assist you with your orders, return policies, shipping schedules, payment questions, or open a dedicated support ticket for you.</p>
+            <p class="hint">Try asking about an order like <code>Where is my order ORD-1001?</code> or asking about our <code>30-day return policy</code>.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Input Form -->
+      <footer class="chat-input-area">
+        <form id="chatForm" class="input-form">
+          <input
+            type="text"
+            id="queryInput"
+            placeholder="Type your question or order number (e.g. ORD-1001)..."
+            autocomplete="off"
+            required
+          />
+          <button type="submit" id="sendBtn" class="btn primary">
+            <span>Send</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          </button>
+        </form>
+      </footer>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+

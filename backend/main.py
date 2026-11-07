@@ -6,6 +6,7 @@ logging middleware, and static frontend hosting.
 
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -52,30 +53,48 @@ app.include_router(orders.router)
 app.include_router(tickets.router)
 app.include_router(health.router)
 
-# Serve frontend routes explicitly (reliable across ASGI serverless on Vercel)
+# Resilient static asset path resolver
+def get_static_path(filename: str) -> Optional[Path]:
+    for directory in [
+        FRONTEND_DIR,
+        BASE_DIR / "public",
+        Path.cwd() / "frontend",
+        Path.cwd() / "public",
+        Path("/var/task/frontend"),
+        Path("/var/task/public"),
+    ]:
+        candidate = directory / filename
+        if candidate.exists():
+            return candidate
+    return None
+
+
 if FRONTEND_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
-    @app.get("/", include_in_schema=False)
-    async def serve_index():
-        index_file = FRONTEND_DIR / "index.html"
-        if index_file.exists():
-            return FileResponse(index_file)
-        return {"message": "ShopAssist AI API is running. Access API docs at /docs"}
 
-    @app.get("/style.css", include_in_schema=False)
-    async def serve_css():
-        css_file = FRONTEND_DIR / "style.css"
-        if css_file.exists():
-            return FileResponse(css_file, media_type="text/css")
-        return {"error": "style.css not found"}
+@app.get("/", include_in_schema=False)
+async def serve_index():
+    f = get_static_path("index.html")
+    if f and f.exists():
+        return FileResponse(f)
+    return {"message": "ShopAssist AI API is running. Access API docs at /docs"}
 
-    @app.get("/app.js", include_in_schema=False)
-    async def serve_js():
-        js_file = FRONTEND_DIR / "app.js"
-        if js_file.exists():
-            return FileResponse(js_file, media_type="application/javascript")
-        return {"error": "app.js not found"}
+
+@app.get("/style.css", include_in_schema=False)
+async def serve_css():
+    f = get_static_path("style.css")
+    if f and f.exists():
+        return FileResponse(f, media_type="text/css")
+    return {"error": "style.css not found"}
+
+
+@app.get("/app.js", include_in_schema=False)
+async def serve_js():
+    f = get_static_path("app.js")
+    if f and f.exists():
+        return FileResponse(f, media_type="application/javascript")
+    return {"error": "app.js not found"}
 
 
 if __name__ == "__main__":
